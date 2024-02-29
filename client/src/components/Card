@@ -1,0 +1,10 @@
+const Card = ({card}) => {
+    return (
+        <li>
+          {card.name}
+        </li>
+    );
+
+}
+
+export default Card;
