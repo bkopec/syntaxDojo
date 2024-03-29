@@ -7,68 +7,104 @@ const config = require('../utils/config')
 let Database;
 Database = require('../database/database');
 
+const { authenticateUser, checkCategoryOwnership, validateModule} = require('../utils/middleware');
 
-const getTokenFrom = request => {
-  const authorization = request.get('authorization')
-  if (authorization && authorization.startsWith('Bearer ')) {
-    return authorization.replace('Bearer ', '')
-  }
-  return null
-}
 
-const authenticate = async (request, response) => {
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-  if (!decodedToken.id) {
-    response.status(401).json({ error: 'token invalid' })
-    return null;
-  }
+cardsRouter.get('/', authenticateUser, async (request, response) => {
 
-  const user = await Database.findUserById(decodedToken.id)
+  const user = request.user;
   if (!user) {
-    response.status(401).json({ error: 'token invalid or user deleted' })
-    return null;
+    return response.status(401).json({ error: 'token invalid or user deleted' });
   }
-
-  return user;
-}
-
-cardsRouter.get('/', async (request, response) => {
-
-  const user = await authenticate(request, response);
-  if (!user)
-    return response.send();
      
     const tasks = await Database.findCardsByLogin(user.login);
     response.send({...tasks});
 })
+
+
+cardsRouter.post('/category/:categoryId/module/:moduleId/card/:cardId/review', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+  const cardId = request.params.cardId;
   
-cardsRouter.delete('/category/:categoryId/module/:moduleId', async (request, response) => {
-  const categoryId = request.params.categoryId;
-  const moduleId = request.params.moduleId;
-
-  const user = await authenticate(request, response);
-  if (!user)
-    return response.send();
-
-
-  const category = await Database.findCategoryById(categoryId);
-  if (!category) {
-    return response.status(404).json({ error: 'Category not found' });
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  if (category.user.toString() !== user._id.toString()) {
-    return response.status(403).json({ error: 'Forbidden' });
+  const category = request.category;
+
+  try {
+    const card = await Database.reviewCard(cardId, user._id, request.body.nextReviewInterval, request.body.nextReviewDate);
+    return response.status(200).send(card);
+  }
+  catch (error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
+});
+
+cardsRouter.put('/category/:categoryId/module/:moduleId/card/:cardId', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+  const cardId = request.params.cardId;
+
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const module = await Database.findModuleById(moduleId);
+  const category = request.category;
+  const module = request.module;
 
-  if (!module) {
-    return response.status(404).json({ error: 'Module not found' });
+  try {
+  await Database.updateCard(cardId, request.body);
+  return response.status(200).send({id : cardId});
+  }
+  catch (error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
+});
+
+cardsRouter.delete('/category/:categoryId/module/:moduleId/card/:cardId', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+  const cardId = request.params.cardId;
+
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  if (module.category.toString() !== category._id.toString()) {
-    return response.status(403).json({ error: 'Forbidden' });
+  const category = request.category;
+  const module = request.module;
+
+  try {
+  await Database.deleteCard(cardId, module);
+  return response.status(200).send({id : cardId});
   }
+  catch (error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
+});
+
+
+cardsRouter.post('/category/:categoryId/module/:moduleId/addCard', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
+  }
+
+
+  const category = request.category;
+  const module = request.module;
+
+  const cardId = await Database.createCard(request.body, module);
+  return response.status(200).send({id : cardId});
+});
+
+
+cardsRouter.delete('/category/:categoryId/module/:moduleId', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
+  }
+
+  const category = request.category;
+  const module = request.module;
 
   try {
   await Database.deleteModule(category, module);
@@ -80,83 +116,100 @@ cardsRouter.delete('/category/:categoryId/module/:moduleId', async (request, res
 });
 
 
-cardsRouter.post('/category/:categoryId/module', async (request, response) => {
-  const categoryId = request.params.categoryId;
-
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-  if (!decodedToken.id)
-    return response.status(401).json({ error: 'token invalid' })
-
-  const user = await Database.findUserById(decodedToken.id)
+cardsRouter.put('/category/:categoryId/reset', authenticateUser, checkCategoryOwnership, async (request, response) => {
+  const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = await Database.findCategoryById(categoryId);
-  if (!category) {
-    return response.status(404).json({ error: 'Category not found' });
-  }
+  const category = request.category;
 
-  if (category.user.toString() !== user._id.toString()) {
-    return response.status(403).json({ error: 'Forbidden' });
-  }
+  await Database.resetScheduleCategory(category, user._id);
 
-  const moduleId = await Database.createModule(request.body.name, category);
-
-  response.send({id : moduleId});
+  response.send({});
 });
 
-cardsRouter.get('/category/:categoryId/populated', async (request, response) => {
-  const categoryId = request.params.categoryId;
-
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-  if (!decodedToken.id)
-    return response.status(401).json({ error: 'token invalid' })
-
-  const user = await Database.findUserById(decodedToken.id)
+cardsRouter.post('/category/:categoryId/module', authenticateUser, checkCategoryOwnership, async (request, response) => {
+  const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = await Database.findCategoryById(categoryId);
-  if (!category) {
-    return response.status(404).json({ error: 'Category not found' });
+  const category = request.category;
+
+  try {
+  const moduleId = await Database.createModule(request.body.name, category);
+  response.send({id : moduleId});
+  }
+  catch (error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
+});
+
+cardsRouter.get('/category/:categoryId/populated/:study?', authenticateUser, checkCategoryOwnership, async (request, response) => {
+  const study = request.params.study;
+
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  if (category.user.toString() !== user._id.toString()) {
-    return response.status(403).json({ error: 'Forbidden' });
-  }
+  const category = request.category;
 
-  const populatedCategory = await Database.getCategoryPopulatedById(categoryId);
+  const populatedCategory = await Database.getCategoryPopulatedById(category._id, study !== undefined ? true : false, user._id.toString());
   response.send(populatedCategory);
 });
 
-cardsRouter.get('/category', async (request, response) => {
+  cardsRouter.put('/category/:categoryId/rename', authenticateUser, checkCategoryOwnership, async (request, response) => {
+    const user = request.user;
+    if (!user) {
+      return response.status(401).json({ error: 'token invalid or user deleted' });
+    }
+  
+    const category = request.category;
+  
+    await Database.renameCategory(category, request.body.name);
+    response.status(200).send({});
+  })
 
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-  if (!decodedToken.id)
-    return response.status(401).json({ error: 'token invalid' })
+cardsRouter.delete('/category/:categoryId', authenticateUser, checkCategoryOwnership, async (request, response) => {
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
+  }
 
-  const user = await Database.findUserById(decodedToken.id)
+  const category = request.category;
+
+  await Database.deleteCategory(category);
+  response.status(200).send({});
+})
+
+cardsRouter.get('/category/public', authenticateUser, async (request, response) => {
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
+  }
+   
+  const categories = await Database.findPublicCategoriesNotByUserId(user._id);
+  response.send(categories);
+})
+
+cardsRouter.get('/category', authenticateUser, async (request, response) => {
+  const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
    
   const categories = await Database.findCategoriesByUserId(user._id);
-  console.log(categories);
   response.send(categories);
 })
 
-cardsRouter.post('/category', async (request, response) => {
+cardsRouter.post('/category', authenticateUser, async (request, response) => {
   
-    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-    if (!decodedToken.id) {
-      return response.status(401).json({ error: 'token invalid' })
-    }
-    const user = await Database.findUserById(decodedToken.id)
-    if (!user) {
-      return response.status(401).json({ error: 'token invalid or user deleted' })
-    }
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
+  }
 
     Database.createCategory(request.body.name, user._id)
     .then(result => {
@@ -164,69 +217,6 @@ cardsRouter.post('/category', async (request, response) => {
     })
     .catch(error => {
       console.error('Error saving task:', error);
-      return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
-    });
-})
-
-cardsRouter.post('/module', async (request, response) => {
-  
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: 'token invalid' })
-  }
-  const user = await Database.findUserById(decodedToken.id)
-  if (!user) {
-    return response.status(401).json({ error: 'token invalid or user deleted' })
-  }
-
-  Database.createModule(request.body.name, request.body.category)
-  .then(result => {
-    return response.status(200).send({id : result});
-  })
-  .catch(error => {
-    console.error('Error saving task:', error);
-    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
-  });
-})
-  
-cardsRouter.delete('/:taskId', async (request, response) => {
-  
-    const taskId = request.params.taskId;
-  
-    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-    if (!decodedToken.id)
-      return response.status(401).json({ error: 'token invalid' })
-  
-    const user = await Database.findUserById(decodedToken.id)
-    if (!user)
-      return response.status(401).json({ error: 'token invalid or user deleted' })
-
-      Database.deleteTaskById(taskId)
-  .then(result => {
-      return response.status(204).end();
-  })
-  .catch(error => {
-    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message })
-  });
-})
-  
-  
-cardsRouter.put('/:taskId', async (request, response) => {
-
-    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-    if (!decodedToken.id)
-      return response.status(401).json({ error: 'token invalid' })
-  
-    const user = await Database.findUserById(decodedToken.id)
-    if (!user)
-      return response.status(401).json({ error: 'token invalid or user deleted' })
-
-    Database.updateTaskCompletion(request.body.id)
-    .then(result => {
-      response.send();
-    })
-    .catch(error => {
-      console.error('Error updating task:', error);
       return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
     });
 })

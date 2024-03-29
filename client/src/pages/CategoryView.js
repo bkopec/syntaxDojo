@@ -3,7 +3,7 @@ import PopulatedCategory from '../components/PopulatedCategory';
 const CategoryView = ({user}) => {
 
   return (
-    <PopulatedCategory user={user}/>
+    <PopulatedCategory user={user} />
   );
 };
 

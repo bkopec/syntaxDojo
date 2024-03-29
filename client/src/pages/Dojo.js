@@ -6,6 +6,7 @@ import {
   
 import Overview from './Overview';
 import CategoryView from './CategoryView';
+import CategoryStudy from './CategoryStudy';
 
 const DojoPage = ({user, setUser}) => {
     return (
@@ -17,6 +18,11 @@ const DojoPage = ({user, setUser}) => {
     <Route path="/category/:categoryId" element={ 
       <>
         <CategoryView user={user} />
+      </>
+    }/>
+    <Route path="/category/:categoryId/study" element={ 
+      <>
+        <CategoryStudy user={user} />
       </>
     }/>
     <Route path="/category/:categoryId/:moduleId" element={ 
