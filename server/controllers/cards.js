@@ -7,7 +7,7 @@ const config = require('../utils/config')
 let Database;
 Database = require('../database/database');
 
-const { authenticateUser, checkCategoryOwnership, validateModule} = require('../utils/middleware');
+const { authenticateUser, checkCategoryOwnership, validateModule, getCategory} = require('../utils/middleware');
 
 
 cardsRouter.get('/', authenticateUser, async (request, response) => {
@@ -146,7 +146,7 @@ cardsRouter.post('/category/:categoryId/module', authenticateUser, checkCategory
   }
 });
 
-cardsRouter.get('/category/:categoryId/populated/:study?', authenticateUser, checkCategoryOwnership, async (request, response) => {
+cardsRouter.get('/category/:categoryId/populated/:study?', authenticateUser, getCategory, async (request, response) => {
   const study = request.params.study;
 
   const user = request.user;
@@ -190,7 +190,7 @@ cardsRouter.get('/category/public', authenticateUser, async (request, response) 
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
    
-  const categories = await Database.findPublicCategoriesNotByUserId(user._id);
+  const categories = await Database.findPublicCategoriesByUserId(user._id);
   response.send(categories);
 })
 

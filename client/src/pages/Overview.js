@@ -206,6 +206,23 @@ const Overview = ({user}) => {
         ))}
       </ul>
       <h2>Public Decks :</h2>
+      <ul className="deckList">
+        {publicCategories.length == 0 && 
+          <li>No decks found</li>}
+        {publicCategories.map((category) => (
+          <div key={category._id} className="deckItem">
+            {(categoryRenaming.id === category._id) &&
+            <input type="text" value={categoryRenaming.name} onChange={(e) => setCategoryRenaming({...categoryRenaming, name : e.target.value})} />}
+            {(categoryRenaming.id !== category._id) &&
+            <a href={'/category/' + category._id}><li>{category.name}</li></a>}
+            <div className="categoryActions">
+            <a href={'/category/' + category._id + '/study'}><span>&#9654; Study</span></a>
+            <a href="#" className="resetCategoryButton" onClick={() => handleResetCategory(category._id, category.name)}>Reset cards schedule</a>
+            </div>
+            <p className="author">Author : <span>{category.user.login}</span></p>
+          </div>
+        ))}
+      </ul>
     </div>
   );
 };

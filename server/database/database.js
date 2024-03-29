@@ -1,5 +1,4 @@
 require('dotenv').config()
-const Task = require('../models/task');
 const User = require('../models/user');
 const { Card, Module, Category } = require('../models/card');
 
@@ -26,8 +25,12 @@ class Database {
     return Category.find({user: userId});
   }
 
-  static async findPublicCategoriesNotByUserId(userId) {
-    return Category.find({user: { $ne: userId }});
+  static async findPublicCategoriesByUserId(userId) {
+    return Category.find({user: { $ne: userId }})
+    .populate({
+      path: 'user',
+      select: 'login'
+    });
   }
 
   static async findModulesByCategoryId(categoryId) {
@@ -221,19 +224,7 @@ static async createCard(card, module) {
 
   }
 
-  static async createTask(task) {
-    const newTask = new Task({
-        ...task
-    })
-  
-    try {
-        await newTask.save();
-        return (newTask._id);
-      } catch (error) {
-        throw error;
-      }
 
-  }
 
   static async createUser(user) {
     const newUser = new User({
@@ -248,24 +239,6 @@ static async createCard(card, module) {
     }
   }
  
-  static async deleteTaskById(id) {
-    try {
-        await Task.findByIdAndDelete(id);
-    } catch (error) {
-        throw error;
-    }  
-  }
-
-  static async updateTaskCompletion(id) {
-    const task = await Task.findById(id);
-    task.completed = !task.completed;
-    try {
-        await task.save();
-    }
-    catch (error) {
-        throw error;
-    }
-  }
 
   static async init() {
     const config = require('../utils/config');

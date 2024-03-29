@@ -83,7 +83,7 @@ strong {
 
 
 .cardInput {
-  min-width:15px;
+  min-width:24px;
   outline: grey 1px solid;
   margin: 0 8px;
   padding : 3px;
@@ -113,6 +113,10 @@ strong {
 
 .showAnswer, .actions {
   display:block;
+}
+
+.studyCard .actions {
+  margin-top:15px;
 }
 
 .studyCard nav {
@@ -274,4 +278,13 @@ button:focus:not(:active) {
   display:flex;
   gap:10px;
   align-items:center;
+}
+
+.author {
+  font-size:0.8rem;
+  margin-top:0px;
+}
+
+.author span {
+  font-weight:bold;
 }

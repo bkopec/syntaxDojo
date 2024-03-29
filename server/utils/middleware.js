@@ -29,6 +29,23 @@ const validateModule = async (request, response, next) => {
   }
 };
 
+
+const getCategory = async (request, response, next) => {
+  try {
+    const categoryId = request.params.categoryId;
+    const category = await Database.findCategoryById(categoryId);
+
+    if (!category) {
+      return response.status(404).json({ error: 'Category not found' });
+    }
+
+    request.category = category; // Attach the category to the request for later use
+    next(); // Continue to the next middleware or route handler
+  } catch (error) {
+    next(error); // Pass the error to the error-handling middleware
+  }
+};
+
 const checkCategoryOwnership = async (request, response, next) => {
   try {
     const categoryId = request.params.categoryId;
@@ -112,5 +129,6 @@ module.exports = {
   authenticateUser,
   requestLogger,
   unknownEndpoint,
-  errorHandler
+  errorHandler,
+  getCategory
 }
