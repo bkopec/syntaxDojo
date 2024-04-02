@@ -6,30 +6,31 @@ const backendUrl = config.backendUrl;
 
 
 const Overview = ({user}) => {
-  const [categories, setCategories] = useState([]);
-  const [publicCategories, setPublicCategories] = useState([]);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [categoryRenaming, setCategoryRenaming] = useState({name:'', _id:''});
+  const [decks, setDecks] = useState([]);
+  const [publicDecks, setPublicDecks] = useState([]);
+  const [newDeckName, setNewDeckName] = useState('');
+  const [deckRenaming, setDeckRenaming] = useState({name:'', _id:''});
+  const [loaded, setLoaded] = useState([false, false]); // [decks, publicDecks]
 
 
-  const handleCategoryRenaming = async () => {
-    if (categoryRenaming.name === '' || (categoryRenaming.name === categories.find(category => category._id === categoryRenaming.id).name)) {
-      setCategoryRenaming({name:'', _id:''});
+  const handleDeckRenaming = async () => {
+    if (deckRenaming.name === '' || (deckRenaming.name === decks.find(deck => deck._id === deckRenaming.id).name)) {
+      setDeckRenaming({name:'', _id:''});
       return; 
     }
     try {
-    const response = await axios.put(`${backendUrl}/api/cards/category/${categoryRenaming.id}/rename`, {name : categoryRenaming.name}, {
+    const response = await axios.put(`${backendUrl}/api/cards/deck/${deckRenaming.id}/rename`, {name : deckRenaming.name}, {
       headers: {
         Authorization: `Bearer ${user.token}`,
         'Content-Type': 'application/json',
       },}
     );
     if (response.status !== 200)
-      throw new Error('Failed to rename category:', response.statusText);
-    setCategories(categories.map((category) => category._id === categoryRenaming.id ? {...category, name : categoryRenaming.name} : category));
-    setCategoryRenaming({name:'', _id:''});
+      throw new Error('Failed to rename deck:', response.statusText);
+    setDecks(decks.map((deck) => deck._id === deckRenaming.id ? {...deck, name : deckRenaming.name} : deck));
+    setDeckRenaming({name:'', _id:''});
     } catch (error) {
-      console.error('Error renaming category:', error);
+      console.error('Error renaming deck:', error);
     }
   };
 
@@ -37,56 +38,60 @@ const Overview = ({user}) => {
   useEffect(() => {
     const handleEnterKey = (e) => {
       if (e.key === 'Enter') {
-        handleCategoryRenaming();
+        handleDeckRenaming();
       }
     };
-    if (categoryRenaming.id !== '') {
+    if (deckRenaming.id !== '') {
     document.addEventListener('keydown', handleEnterKey);
     return () => {
       document.removeEventListener('keydown', handleEnterKey);
     }
   }
-  }, [categoryRenaming]);
+  }, [deckRenaming]);
 
 
-  // Fetch categories on component mount
+  // Fetch decks on component mount
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(backendUrl + '/api/cards/category', {
+        const response = await axios.get(backendUrl + '/api/cards/deck', {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
         });
-        setCategories(response.data);
+        setDecks(response.data);
+        setLoaded([true, loaded[1]]);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching decks:', error);
       }
     };
 
-    const fetchPublicCategories = async () => {
+    const fetchPublicDecks = async () => {
       try {
-        const response = await axios.get(backendUrl + '/api/cards/category/public', {
+        const response = await axios.get(backendUrl + '/api/cards/deck/public', {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
         });
-        setPublicCategories(response.data);
+        setPublicDecks(response.data);
+        setLoaded([loaded[0], true]);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching decks:', error);
       }
     };
 
 
     fetchCategories();
-    fetchPublicCategories();
+    fetchPublicDecks();
   }, [user.token]);
 
-  const handleCreateCategory = async () => {
+  const handleCreateDeck = async () => {
+    if (!newDeckName)
+      return;
     try {
       const response = await axios.post(
-        backendUrl + '/api/cards/category',
-        { user: user.login, name: newCategoryName },
+        backendUrl + '/api/cards/deck',
+        { user: user.login, name: newDeckName },
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
@@ -96,24 +101,24 @@ const Overview = ({user}) => {
       );
 
       if (response.status === 200) {
-        setCategories([...categories, {name : newCategoryName, _id : response.data.id}]);
-        setNewCategoryName('');
+        setDecks([...decks, {name : newDeckName, _id : response.data.id}]);
+        setNewDeckName('');
       } else {
-        console.error('Failed to create category:', response.statusText);
+        console.error('Failed to create deck:', response.statusText);
       }
     } catch (error) {
-      console.error('Error creating category:', error);
+      console.error('Error creating deck:', error);
     }
   };
 
-  const handleDeleteCategory = async (categoryId, categoryName) => {
-    const userConfirmed = window.confirm(`Are you sure you want to delete category ${categoryName} ?`);
+  const handleDeleteDeck = async (deckId, deckName) => {
+    const userConfirmed = window.confirm(`Are you sure you want to delete deck ${deckName} ?`);
     if (!userConfirmed) {
       return;
     }
 
     try {
-      const response = await axios.delete(`${backendUrl}/api/cards/category/${categoryId}`,
+      const response = await axios.delete(`${backendUrl}/api/cards/deck/${deckId}`,
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
@@ -122,26 +127,26 @@ const Overview = ({user}) => {
         }
         );
         if (response.status === 200) {
-            console.log('Category deleted');
-            setCategories(categories.filter((category) => category._id !== categoryId));
+            console.log('Deck deleted');
+            setDecks(decks.filter((deck) => deck._id !== deckId));
             }
         else {
-            console.error('Failed to delete category:', response.statusText);
+            console.error('Failed to delete deck:', response.statusText);
         }
     }
     catch (error) {
-        console.error('Error deleting category:', error);
+        console.error('Error deleting deck:', error);
     }
     }
     
-    const handleResetCategory = async (categoryId, categoryName) => {
-        const userConfirmed = window.confirm(`Are you sure you want to reset deck ${categoryName} ?`);
+    const handleResetDeck = async (deckId, deckName) => {
+        const userConfirmed = window.confirm(`Are you sure you want to reset deck ${deckName} ?`);
         if (!userConfirmed) {
           return;
         }
     
         try {
-          const response = await axios.put(`${backendUrl}/api/cards/category/${categoryId}/reset`,
+          const response = await axios.put(`${backendUrl}/api/cards/deck/${deckId}/reset`,
             {},
             {
               headers: {
@@ -151,15 +156,15 @@ const Overview = ({user}) => {
             }
             );
             if (response.status === 200) {
-                console.log('Category reset');
-                setCategories(categories.map((category) => category._id === categoryId ? {...category, cards : []} : category));
+                console.log('Deck reset');
+                setDecks(decks.map((deck) => deck._id === deckId ? {...deck, cards : []} : deck));
                 }
             else {
-                console.error('Failed to reset category:', response.statusText);
+                console.error('Failed to reset deck:', response.statusText);
             }
         }
         catch (error) {
-            console.error('Error resetting category:', error);
+            console.error('Error resetting deck:', error);
         }
         }
 
@@ -172,54 +177,54 @@ const Overview = ({user}) => {
         <label>
           <input
             type="text"
-            value={newCategoryName}
+            value={newDeckName}
             placeholder="New Deck Name"
-            onChange={(e) => setNewCategoryName(e.target.value)}
+            onChange={(e) => setNewDeckName(e.target.value)}
           />
         </label>
-        <button type="button" onClick={handleCreateCategory}>
+        <button type="button" onClick={handleCreateDeck}>
           Create Deck
         </button>
       </form>
 
       <h2>Your Decks :</h2>
       <ul className="deckList">
-        {categories.length == 0 && 
+        {loaded[0] && decks.length == 0 && 
           <li>No decks found</li>}
-        {categories.map((category) => (
-          <div key={category._id} className="deckItem">
-            {(categoryRenaming.id === category._id) &&
-            <input type="text" value={categoryRenaming.name} onChange={(e) => setCategoryRenaming({...categoryRenaming, name : e.target.value})} />}
-            {(categoryRenaming.id !== category._id) &&
-            <a href={'/category/' + category._id}><li>{category.name}</li></a>}
-            <div className="categoryActions">
-            <a href={'/category/' + category._id + '/study'}><span>&#9654; Study</span></a>
-            <a href={'/category/' + category._id}>Edit</a>
-            <a href="#" className="resetCategoryButton" onClick={() => handleResetCategory(category._id, category.name)}>Reset cards schedule</a>
+        {decks.map((deck) => (
+          <div key={deck._id} className="deckItem">
+            {(deckRenaming.id === deck._id) &&
+            <input type="text" value={deckRenaming.name} onChange={(e) => setDeckRenaming({...deckRenaming, name : e.target.value})} />}
+            {(deckRenaming.id !== deck._id) &&
+            <a href={'/deck/' + deck._id}><li>{deck.name}</li></a>}
+            <div className="deckActions">
+            <a href={'/deck/' + deck._id + '/study'}><span>&#9654; Study</span></a>
+            <a href={'/deck/' + deck._id}>Edit</a>
+            <a href="#" className="resetDeckButton" onClick={() => handleResetDeck(deck._id, deck.name)}>Reset cards schedule</a>
             <a href="#" 
-            onClick={() => categoryRenaming.name == "" ? setCategoryRenaming({name : category.name, id : category._id}) : handleCategoryRenaming()} 
-            style={{color:(categoryRenaming.id === category._id ? "green" : "")}}>
+            onClick={() => deckRenaming.name == "" ? setDeckRenaming({name : deck.name, id : deck._id}) : handleDeckRenaming()} 
+            style={{color:(deckRenaming.id === deck._id ? "green" : "")}}>
               Rename</a>
-            <span className="deleteCategoryButton" style={{ color: 'red' }} onClick={() => handleDeleteCategory(category._id, category.name)}>❌ Delete</span>
+            <span className="deleteDeckButton" style={{ color: 'red' }} onClick={() => handleDeleteDeck(deck._id, deck.name)}>❌ Delete</span>
             </div>
           </div>
         ))}
       </ul>
       <h2>Public Decks :</h2>
       <ul className="deckList">
-        {publicCategories.length == 0 && 
+        {loaded[1] && publicDecks.length == 0 && 
           <li>No decks found</li>}
-        {publicCategories.map((category) => (
-          <div key={category._id} className="deckItem">
-            {(categoryRenaming.id === category._id) &&
-            <input type="text" value={categoryRenaming.name} onChange={(e) => setCategoryRenaming({...categoryRenaming, name : e.target.value})} />}
-            {(categoryRenaming.id !== category._id) &&
-            <a href={'/category/' + category._id}><li>{category.name}</li></a>}
-            <div className="categoryActions">
-            <a href={'/category/' + category._id + '/study'}><span>&#9654; Study</span></a>
-            <a href="#" className="resetCategoryButton" onClick={() => handleResetCategory(category._id, category.name)}>Reset cards schedule</a>
+        {publicDecks.map((deck) => (
+          <div key={deck._id} className="deckItem">
+            {(deckRenaming.id === deck._id) &&
+            <input type="text" value={deckRenaming.name} onChange={(e) => setDeckRenaming({...deckRenaming, name : e.target.value})} />}
+            {(deckRenaming.id !== deck._id) &&
+            <a href={'/deck/' + deck._id}><li>{deck.name}</li></a>}
+            <div className="deckActions">
+            <a href={'/deck/' + deck._id + '/study'}><span>&#9654; Study</span></a>
+            <a href="#" className="resetDeckButton" onClick={() => handleResetDeck(deck._id, deck.name)}>Reset cards schedule</a>
             </div>
-            <p className="author">Author : <span>{category.user.login}</span></p>
+            <p className="author">Author : <span>{deck.user.login}</span></p>
           </div>
         ))}
       </ul>

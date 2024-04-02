@@ -1,6 +1,6 @@
 require('dotenv').config()
 const User = require('../models/user');
-const { Card, Module, Category } = require('../models/card');
+const { Card, Module, Deck } = require('../models/card');
 
 class Database {
 
@@ -12,8 +12,12 @@ class Database {
     return User.findOne({login: login});
   }
 
-  static async findCategoryById(categoryId) {
-    return Category.findById(categoryId);
+  static async findDeckById(deckId) {
+    return Deck.findById(deckId)
+    .populate({
+      path: 'user',
+      select: 'login'
+    });
   }
 
   static async findModuleById(moduleId) {
@@ -22,38 +26,38 @@ class Database {
 
 
   static async findCategoriesByUserId(userId) {
-    return Category.find({user: userId});
+    return Deck.find({user: userId});
   }
 
   static async findPublicCategoriesByUserId(userId) {
-    return Category.find({user: { $ne: userId }})
+    return Deck.find({user: { $ne: userId }})
     .populate({
       path: 'user',
       select: 'login'
     });
   }
 
-  static async findModulesByCategoryId(categoryId) {
-    return Module.find({category: categoryId});
+  static async findModulesByDeckId(deckId) {
+    return Module.find({deck: deckId});
   }
 
   
 
-  static async renameCategory(category, name) 
+  static async renameDeck(deck, name) 
   {
-    category.name = name;
+    deck.name = name;
     try {
-        await category.save();
+        await deck.save();
     }
     catch (error) {
         throw error;
     }
   }
 
-static async resetScheduleCategory(category, userId) {
+static async resetScheduleDeck(deck, userId) {
   try {
-    await category.populate({ path: 'modules', populate: { path: 'cards' } });
-    for (const module of category.modules) {
+    await deck.populate({ path: 'modules', populate: { path: 'cards' } });
+    for (const module of deck.modules) {
       for (const card of module.cards) {
         if (card.reviews.has(userId.toString())) {
           card.reviews.delete(userId.toString());
@@ -81,17 +85,17 @@ static async resetScheduleCategory(category, userId) {
   }
 
 
-  static async deleteCategory(category) {
-    for (const categoryModule of category.modules) {
+  static async deleteDeck(deck) {
+    for (const deckModule of deck.modules) {
       // get the module and delete all the cards in its cards array
-      const module = await Module.findById(categoryModule);
+      const module = await Module.findById(deckModule);
       const cardIds = module.cards.map(card => card.toString());
       await Card.deleteMany({ _id: { $in: cardIds } });
       await Module.deleteOne({ _id: module._id });
     }
 
     try {
-        await Category.findByIdAndDelete(category._id);
+        await Deck.findByIdAndDelete(deck._id);
     } catch (error) {
         throw error;
     }
@@ -141,15 +145,15 @@ static async createCard(card, module) {
       }
   }
 
-  static async deleteModule(category, module) {
+  static async deleteModule(deck, module) {
       const cardIds = module.cards.map(card => card.toString());
     
       await Card.deleteMany({ _id: { $in: cardIds } });
     
-      category.modules = category.modules.filter(m => m.toString() !== module._id.toString());
+      deck.modules = deck.modules.filter(m => m.toString() !== module._id.toString());
     
       try {
-        await category.save();
+        await deck.save();
         await Module.deleteOne({ _id: module._id });
       } catch (error) {
         throw error;
@@ -157,8 +161,8 @@ static async createCard(card, module) {
   }
 
 
-  static async createCategory(name, userId) {
-    const newCategory = new Category({
+  static async createDeck(name, userId) {
+    const newDeck = new Deck({
         name:name,
         modules:[],
         user: userId,
@@ -166,28 +170,31 @@ static async createCard(card, module) {
   
   
     try {
-        await newCategory.save();
-        return (newCategory._id);
+        await newDeck.save();
+        return (newDeck._id);
       } catch (error) {
-        throw new Error('Failed to save category');
+        throw new Error('Failed to save deck');
       }
 
   }
 
-  static async getCategoryPopulatedById(categoryId, study, userId) {
-    const category = await Category.findById(categoryId)
+  static async getDeckPopulatedById(deckId, study, userId) {
+    const deck = await Deck.findById(deckId)
   .populate({
     path: 'modules',
     populate: {
       path: 'cards',
       model: 'Card', 
-      select: study ? '' : '-reviews'
     },
+  })
+  .populate({
+    path: 'user',
+    select: 'login'
   });
 
-  if (study) {
-    for (const module of category.modules) {
+    for (const module of deck.modules) {
       for (const card of module.cards) {
+        console.log(card);
         if (card.reviews.has(userId)) {
           const userReview = card.reviews.get(userId);
           card.nextReviewDate = userReview.nextReviewDate;
@@ -195,28 +202,28 @@ static async createCard(card, module) {
         }
         else {
           card.nextReviewDate = Date.now() - 1;
-          card.nextReviewInterval = 0;
+          card.nextReviewInterval = -1;
         }
+        card.reviews = undefined;
       }
-      module.cards = module.cards.filter(card => card.nextReviewDate <= Date.now());
+      if (study)
+        module.cards = module.cards.filter(card => card.nextReviewDate <= Date.now());
     }
-  }
-  
-  return(category);
+  return(deck);
   }
 
-  static async createModule(name, category) {
+  static async createModule(name, deck) {
     const newModule = new Module({
         name:name,
-        category:category._id,
+        deck:deck._id,
         cards:[],
     })
 
-    category.modules.push(newModule._id);
+    deck.modules.push(newModule._id);
   
     try {
         await newModule.save();
-        await category.save();
+        await deck.save();
         return (newModule._id);
       } catch (error) {
         throw new Error('Failed to save module');

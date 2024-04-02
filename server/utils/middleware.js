@@ -6,7 +6,7 @@ const Database = require('../database/database'); // Replace with your actual da
 const validateModule = async (request, response, next) => {
   try {
     const moduleId = request.params.moduleId;
-    const category = request.category; // Assuming category is already attached to the request
+    const deck = request.deck; // Assuming deck is already attached to the request
 
     const module = await Database.findModuleById(moduleId);
 
@@ -14,55 +14,48 @@ const validateModule = async (request, response, next) => {
       return response.status(404).json({ error: 'Module not found' });
     }
 
-    if (module.category.toString() !== category._id.toString()) {
-      return response.status(403).json({ error: 'Forbidden' });
-    }
-
-    // Attach the module to the request for later use
     request.module = module;
 
-    // Proceed to the next middleware or route handler
     next();
   } catch (error) {
-    // Pass any error to the error-handling middleware
     next(error);
   }
 };
 
 
-const getCategory = async (request, response, next) => {
+const getDeck = async (request, response, next) => {
   try {
-    const categoryId = request.params.categoryId;
-    const category = await Database.findCategoryById(categoryId);
+    const deckId = request.params.deckId;
+    const deck = await Database.findDeckById(deckId);
 
-    if (!category) {
-      return response.status(404).json({ error: 'Category not found' });
+    if (!deck) {
+      return response.status(404).json({ error: 'Deck not found' });
     }
 
-    request.category = category; // Attach the category to the request for later use
-    next(); // Continue to the next middleware or route handler
+    request.deck = deck;
+    next(); 
   } catch (error) {
-    next(error); // Pass the error to the error-handling middleware
+    next(error); 
   }
 };
 
-const checkCategoryOwnership = async (request, response, next) => {
+const checkDeckOwnership = async (request, response, next) => {
   try {
-    const categoryId = request.params.categoryId;
-    const category = await Database.findCategoryById(categoryId);
+    const deckId = request.params.deckId;
+    const deck = await Database.findDeckById(deckId);
 
-    if (!category) {
-      return response.status(404).json({ error: 'Category not found' });
+    if (!deck) {
+      return response.status(404).json({ error: 'Deck not found' });
     }
 
-    if (category.user.toString() !== request.user._id.toString()) {
+    if (deck.user._id.toString() !== request.user._id.toString()) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
-    request.category = category; // Attach the category to the request for later use
-    next(); // Continue to the next middleware or route handler
+    request.deck = deck; 
+    next();
   } catch (error) {
-    next(error); // Pass the error to the error-handling middleware
+    next(error);
   }
 };
 
@@ -87,20 +80,20 @@ const authenticateUser = async (request, response, next) => {
       return response.status(401).json({ error: 'Token invalid or user deleted' });
     }
 
-    request.user = user; // Attach the user to the request for later use
-    next(); // Continue to the next middleware or route handler
+    request.user = user;
+    next();
   } catch (error) {
-    next(error); // Pass the error to the error-handling middleware
+    next(error); 
   }
 };
 
 module.exports = authenticateUser;
 
 const requestLogger = (request, response, next) => {
-  //logger.info('Method:', request.method)
-  //logger.info('Path:  ', request.path)
-  //logger.info('Body:  ', request.body)
-  //logger.info('---')
+  logger.info('Method:', request.method)
+  logger.info('Path:  ', request.path)
+  logger.info('Body:  ', request.body)
+  logger.info('---')
   next()
 }
 
@@ -110,7 +103,6 @@ const unknownEndpoint = (request, response) => {
 
 const errorHandler = (error, request, response, next) => {
   //logger.error(error.message)
-  console.log("grrrr");
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
   } else if (error.name === 'ValidationError') {
@@ -125,10 +117,10 @@ const errorHandler = (error, request, response, next) => {
 
 module.exports = {
   validateModule,
-  checkCategoryOwnership,
+  checkDeckOwnership,
   authenticateUser,
   requestLogger,
   unknownEndpoint,
   errorHandler,
-  getCategory
+  getDeck
 }

@@ -1,28 +1,11 @@
 const cardsRouter = require('express').Router()
 
-const jwt = require('jsonwebtoken')
-
-const config = require('../utils/config')
-
 let Database;
 Database = require('../database/database');
 
-const { authenticateUser, checkCategoryOwnership, validateModule, getCategory} = require('../utils/middleware');
+const { authenticateUser, checkDeckOwnership, validateModule, getDeck} = require('../utils/middleware');
 
-
-cardsRouter.get('/', authenticateUser, async (request, response) => {
-
-  const user = request.user;
-  if (!user) {
-    return response.status(401).json({ error: 'token invalid or user deleted' });
-  }
-     
-    const tasks = await Database.findCardsByLogin(user.login);
-    response.send({...tasks});
-})
-
-
-cardsRouter.post('/category/:categoryId/module/:moduleId/card/:cardId/review', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+cardsRouter.post('/deck/:deckId/module/:moduleId/card/:cardId/review', authenticateUser, getDeck, validateModule, async (request, response) => {
   const cardId = request.params.cardId;
   
   const user = request.user;
@@ -30,7 +13,7 @@ cardsRouter.post('/category/:categoryId/module/:moduleId/card/:cardId/review', a
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
 
   try {
     const card = await Database.reviewCard(cardId, user._id, request.body.nextReviewInterval, request.body.nextReviewDate);
@@ -41,7 +24,7 @@ cardsRouter.post('/category/:categoryId/module/:moduleId/card/:cardId/review', a
   }
 });
 
-cardsRouter.put('/category/:categoryId/module/:moduleId/card/:cardId', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+cardsRouter.put('/deck/:deckId/module/:moduleId/card/:cardId', authenticateUser, checkDeckOwnership, validateModule, async (request, response) => {
   const cardId = request.params.cardId;
 
   const user = request.user;
@@ -49,7 +32,7 @@ cardsRouter.put('/category/:categoryId/module/:moduleId/card/:cardId', authentic
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
   const module = request.module;
 
   try {
@@ -61,7 +44,7 @@ cardsRouter.put('/category/:categoryId/module/:moduleId/card/:cardId', authentic
   }
 });
 
-cardsRouter.delete('/category/:categoryId/module/:moduleId/card/:cardId', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+cardsRouter.delete('/deck/:deckId/module/:moduleId/card/:cardId', authenticateUser, checkDeckOwnership, validateModule, async (request, response) => {
   const cardId = request.params.cardId;
 
   const user = request.user;
@@ -69,7 +52,7 @@ cardsRouter.delete('/category/:categoryId/module/:moduleId/card/:cardId', authen
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
   const module = request.module;
 
   try {
@@ -82,32 +65,33 @@ cardsRouter.delete('/category/:categoryId/module/:moduleId/card/:cardId', authen
 });
 
 
-cardsRouter.post('/category/:categoryId/module/:moduleId/addCard', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+cardsRouter.post('/deck/:deckId/module/:moduleId/addCard', authenticateUser, checkDeckOwnership, validateModule, async (request, response) => {
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
 
-  const category = request.category;
+  const deck = request.deck;
   const module = request.module;
 
   const cardId = await Database.createCard(request.body, module);
+
   return response.status(200).send({id : cardId});
 });
 
 
-cardsRouter.delete('/category/:categoryId/module/:moduleId', authenticateUser, checkCategoryOwnership, validateModule, async (request, response) => {
+cardsRouter.delete('/deck/:deckId/module/:moduleId', authenticateUser, checkDeckOwnership, validateModule, async (request, response) => {
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
   const module = request.module;
 
   try {
-  await Database.deleteModule(category, module);
+  await Database.deleteModule(deck, module);
   response.status(200).end();
   }
   catch (error) {
@@ -116,29 +100,29 @@ cardsRouter.delete('/category/:categoryId/module/:moduleId', authenticateUser, c
 });
 
 
-cardsRouter.put('/category/:categoryId/reset', authenticateUser, checkCategoryOwnership, async (request, response) => {
+cardsRouter.put('/deck/:deckId/reset', authenticateUser, getDeck, async (request, response) => {
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
 
-  await Database.resetScheduleCategory(category, user._id);
+  await Database.resetScheduleDeck(deck, user._id);
 
   response.send({});
 });
 
-cardsRouter.post('/category/:categoryId/module', authenticateUser, checkCategoryOwnership, async (request, response) => {
+cardsRouter.post('/deck/:deckId/module', authenticateUser, checkDeckOwnership, async (request, response) => {
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
 
   try {
-  const moduleId = await Database.createModule(request.body.name, category);
+  const moduleId = await Database.createModule(request.body.name, deck);
   response.send({id : moduleId});
   }
   catch (error) {
@@ -146,7 +130,7 @@ cardsRouter.post('/category/:categoryId/module', authenticateUser, checkCategory
   }
 });
 
-cardsRouter.get('/category/:categoryId/populated/:study?', authenticateUser, getCategory, async (request, response) => {
+cardsRouter.get('/deck/:deckId/populated/:study?', authenticateUser, getDeck, async (request, response) => {
   const study = request.params.study;
 
   const user = request.user;
@@ -154,37 +138,37 @@ cardsRouter.get('/category/:categoryId/populated/:study?', authenticateUser, get
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
 
-  const populatedCategory = await Database.getCategoryPopulatedById(category._id, study !== undefined ? true : false, user._id.toString());
-  response.send(populatedCategory);
+  const populatedDeck = await Database.getDeckPopulatedById(deck._id, study !== undefined ? true : false, user._id.toString());
+  response.send(populatedDeck);
 });
 
-  cardsRouter.put('/category/:categoryId/rename', authenticateUser, checkCategoryOwnership, async (request, response) => {
+  cardsRouter.put('/deck/:deckId/rename', authenticateUser, checkDeckOwnership, async (request, response) => {
     const user = request.user;
     if (!user) {
       return response.status(401).json({ error: 'token invalid or user deleted' });
     }
   
-    const category = request.category;
+    const deck = request.deck;
   
-    await Database.renameCategory(category, request.body.name);
+    await Database.renameDeck(deck, request.body.name);
     response.status(200).send({});
   })
 
-cardsRouter.delete('/category/:categoryId', authenticateUser, checkCategoryOwnership, async (request, response) => {
+cardsRouter.delete('/deck/:deckId', authenticateUser, checkDeckOwnership, async (request, response) => {
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const category = request.category;
+  const deck = request.deck;
 
-  await Database.deleteCategory(category);
+  await Database.deleteDeck(deck);
   response.status(200).send({});
 })
 
-cardsRouter.get('/category/public', authenticateUser, async (request, response) => {
+cardsRouter.get('/deck/public', authenticateUser, async (request, response) => {
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
@@ -194,7 +178,7 @@ cardsRouter.get('/category/public', authenticateUser, async (request, response) 
   response.send(categories);
 })
 
-cardsRouter.get('/category', authenticateUser, async (request, response) => {
+cardsRouter.get('/deck', authenticateUser, async (request, response) => {
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
@@ -204,14 +188,14 @@ cardsRouter.get('/category', authenticateUser, async (request, response) => {
   response.send(categories);
 })
 
-cardsRouter.post('/category', authenticateUser, async (request, response) => {
+cardsRouter.post('/deck', authenticateUser, async (request, response) => {
   
   const user = request.user;
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-    Database.createCategory(request.body.name, user._id)
+    Database.createDeck(request.body.name, user._id)
     .then(result => {
       return response.status(200).send({id : result});
     })

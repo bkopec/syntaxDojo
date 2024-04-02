@@ -1,11 +1,11 @@
 const mongoose = require('mongoose')
 
-const { Category } = require('./card');
+const { Deck } = require('./card');
 
 const userSchema = new mongoose.Schema({
     login: String,
     password: String,
-    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
+    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Deck' }],
   })
 
 userSchema.set('toJSON', {

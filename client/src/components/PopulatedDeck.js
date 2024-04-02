@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useLayoutEffect} from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-import PopulatedModule from './PopulatedModule';
-import ViewCardModal from './ViewCardModal';
-import AddCardModal from './AddCardModal';
+import PopulatedModule from './PopulatedModule.js';
+import ViewCardModal from './ViewCardModal.js';
+import AddCardModal from './AddCardModal.js';
 
 import config from '../config.js'
 
@@ -13,44 +13,45 @@ const backendUrl = config.backendUrl;
 
 
 
-const PopulatedCategory = ({user}) => {
+const PopulatedDeck = ({user}) => {
 
-    const {categoryId} = useParams();
-    const [category, setCategory] = useState(null);
+    const {deckId} = useParams();
+    const [deck, setDeck] = useState(null);
     const [newModuleName, setNewModuleName] = useState('');
 
     const [showAddCardModal, setShowAddCardModal] = useState(false);
     const [viewCardModal, setViewCardModal] = useState(null);
 
-
     const [selectedModuleId, setSelectedModuleId] = useState(null);
 
     const navigate = useNavigate();
+
+    const [isUserOwner, setIsUserOwner] = useState(false);
   
-    // Fetch category data on component mount
     useEffect(() => {
-      const fetchCategory = async () => {
+      const fetchDeck = async () => {
         try {
-          const response = await axios.get(backendUrl + `/api/cards/category/${categoryId}/populated`, {
+          const response = await axios.get(backendUrl + `/api/cards/deck/${deckId}/populated`, {
             headers: {
               Authorization: `Bearer ${user.token}`,
             },
           });
-          setCategory(response.data);
+          setIsUserOwner(response.data.user.login === user.login);
+          setDeck(response.data);
         } catch (error) {
-          console.error('Error fetching category:', error);
+          console.error('Error fetching deck:', error);
         }
       };
   
-      fetchCategory();
-    }, [categoryId, user.token]); // Include categoryId and user.token as dependencies
+      fetchDeck();
+    }, [deckId, user.token]); 
   
 
     const onCardAdded = (card, moduleId) => {
 
-            setCategory((prevCategory) => ({
-              ...prevCategory,
-              modules: prevCategory.modules.map((module) =>
+            setDeck((prevDeck) => ({
+              ...prevDeck,
+              modules: prevDeck.modules.map((module) =>
                 module._id === moduleId
                   ? {
                       ...module,
@@ -60,7 +61,6 @@ const PopulatedCategory = ({user}) => {
               ),
             }));
       
-            //handleCloseModal();
     }
 
     useLayoutEffect(() => {
@@ -72,13 +72,12 @@ const PopulatedCategory = ({user}) => {
           }
         };
     
-        //document.removeEventListener('keydown', handleKeyDown);
 
         document.addEventListener('keydown', handleKeyDown);
         return () => {
           document.removeEventListener('keydown', handleKeyDown);
         };
-      }, [category, viewCardModal]);
+      }, [deck, viewCardModal]);
 
 
     const handleUpdateCard = async (updatedCard) => {
@@ -86,7 +85,7 @@ const PopulatedCategory = ({user}) => {
         return;
 
       try {
-      const response = await axios.put(backendUrl + `/api/cards/category/${categoryId}/module/${updatedCard.moduleId}/card/${updatedCard._id}`, updatedCard, {
+      const response = await axios.put(backendUrl + `/api/cards/deck/${deckId}/module/${updatedCard.moduleId}/card/${updatedCard._id}`, updatedCard, {
         headers: {
           Authorization: `Bearer ${user.token}`,
           'Content-Type': 'application/json',
@@ -94,9 +93,9 @@ const PopulatedCategory = ({user}) => {
         });
       if (response.status !== 200)
         throw new Error('Failed to update card:', response.statusText);
-        setCategory((prevCategory) => ({
-          ...prevCategory,
-          modules: prevCategory.modules.map((module) =>
+        setDeck((prevDeck) => ({
+          ...prevDeck,
+          modules: prevDeck.modules.map((module) =>
             module._id === updatedCard.moduleId
               ? { ...module, cards: module.cards.map((card) => (card._id === updatedCard._id ? updatedCard : card)) }
               : module
@@ -112,7 +111,7 @@ const PopulatedCategory = ({user}) => {
 
 
     const handleViewNextCard = () => {
-        const currentModule = category.modules.find((module) =>
+        const currentModule = deck.modules.find((module) =>
             module.cards.some((card) => card._id === viewCardModal._id)
         );
         const currentCardIndex = currentModule.cards.findIndex(
@@ -123,10 +122,10 @@ const PopulatedCategory = ({user}) => {
             setViewCardModal(nextCard);
         }
         else {
-            let nextModuleIndex = category.modules.findIndex((module) => module._id === currentModule._id) + 1;
-            let nextModule = category.modules[nextModuleIndex];
+            let nextModuleIndex = deck.modules.findIndex((module) => module._id === currentModule._id) + 1;
+            let nextModule = deck.modules[nextModuleIndex];
             while (nextModule && nextModule.cards.length === 0) {
-                nextModule = category.modules[nextModuleIndex + 1];
+                nextModule = deck.modules[nextModuleIndex + 1];
                 nextModuleIndex++;
             }
             if (nextModule && nextModule.cards[0])
@@ -137,7 +136,7 @@ const PopulatedCategory = ({user}) => {
     };
 
     const handleViewPreviousCard = () => {
-        const currentModule = category.modules.find((module) =>
+        const currentModule = deck.modules.find((module) =>
             module.cards.some((card) => card._id === viewCardModal._id)
         );
         const currentCardIndex = currentModule.cards.findIndex(
@@ -148,14 +147,14 @@ const PopulatedCategory = ({user}) => {
             setViewCardModal(previousCard);
         }
         else {
-            let previousModuleIndex = category.modules.findIndex((module) => module._id === currentModule._id) - 1;
+            let previousModuleIndex = deck.modules.findIndex((module) => module._id === currentModule._id) - 1;
             if (previousModuleIndex == -1) {
                 setViewCardModal(null);
                 return;
             }
-            let previousModule = category.modules[previousModuleIndex];
+            let previousModule = deck.modules[previousModuleIndex];
             while (previousModule && previousModule.cards.length === 0) {
-                previousModule = category.modules[previousModuleIndex - 1];
+                previousModule = deck.modules[previousModuleIndex - 1];
                 previousModuleIndex--;
             }
             if (previousModule && previousModule.cards[previousModule.cards.length - 1]) {
@@ -183,9 +182,11 @@ const PopulatedCategory = ({user}) => {
     
 
     const handleAddModule = async () => {
+      if (!newModuleName)
+        return;
       try {
         const response = await axios.post(
-          backendUrl + `/api/cards/category/${categoryId}/module/`,
+          backendUrl + `/api/cards/deck/${deckId}/module/`,
           { name: newModuleName },
           {
             headers: {
@@ -196,10 +197,9 @@ const PopulatedCategory = ({user}) => {
         );
   
         if (response.status === 200) {
-          // If the response is successful, update the category state
-          setCategory((prevCategory) => ({
-            ...prevCategory,
-            modules: [...prevCategory.modules, {_id : response.data.id, name: newModuleName, cards: []}],
+          setDeck((prevDeck) => ({
+            ...prevDeck,
+            modules: [...prevDeck.modules, {_id : response.data.id, name: newModuleName, cards: []}],
           }));
           setNewModuleName('');
         } else {
@@ -212,9 +212,9 @@ const PopulatedCategory = ({user}) => {
 
 
     const onModuleDelete = (moduleId) => {
-        setCategory((prevCategory) => ({
-          ...prevCategory,
-          modules: prevCategory.modules.filter((module) => module._id !== moduleId),
+        setDeck((prevDeck) => ({
+          ...prevDeck,
+          modules: prevDeck.modules.filter((module) => module._id !== moduleId),
         }));
       };
     
@@ -224,16 +224,16 @@ const PopulatedCategory = ({user}) => {
           return;
         }
         try {
-          await axios.delete(backendUrl + `/api/cards/category/${categoryId}/module/${moduleId}/card/${cardId}`, 
+          await axios.delete(backendUrl + `/api/cards/deck/${deckId}/module/${moduleId}/card/${cardId}`, 
           {headers: {
             Authorization: `Bearer ${user.token}`,
             'Content-Type': 'application/json',
           },});
             if (viewCardModal && viewCardModal._id === cardId)
                 setViewCardModal(null);
-            setCategory((prevCategory) => ({
-                ...prevCategory,
-                modules: prevCategory.modules.map((module) =>
+            setDeck((prevDeck) => ({
+                ...prevDeck,
+                modules: prevDeck.modules.map((module) =>
                     module._id === moduleId
                     ? {
                         ...module,
@@ -254,7 +254,7 @@ const PopulatedCategory = ({user}) => {
         }
 
         try {
-          await axios.delete(backendUrl + `/api/cards/category/${categoryId}/module/${moduleId}`, 
+          await axios.delete(backendUrl + `/api/cards/deck/${deckId}/module/${moduleId}`, 
           {headers: {
             Authorization: `Bearer ${user.token}`,
             'Content-Type': 'application/json',
@@ -265,24 +265,28 @@ const PopulatedCategory = ({user}) => {
         }
       };
 
-      console.log(category);
 
     return (
         <>
-        {category ? (
+        {deck ? (
         <div>
-        <a href="#" onClick={() => navigate("/")}>Go back</a>
-        <h1>Deck: {category.name}</h1>
-        <div className="buttonForm">
+        <nav className="deckActions">
+          <a href="#" onClick={() => navigate("/")}>Go back</a>
+          <a href={'/deck/' + deck._id + '/study'}><span>&#9654; Study</span></a>
+        </nav>
+        <h1>Deck: {deck.name}</h1>
+        {isUserOwner && <div className="buttonForm">
           <input
             type="text"
             value={newModuleName}
             onChange={(e) => setNewModuleName(e.target.value)}
           />
           <button onClick={handleAddModule}>Add Module</button>
-        </div>
+        </div>}
 
-        {category.modules.map((module) => (
+        {deck.modules.length === 0 && <p>No modules or cards in this deck</p>}
+
+        {deck.modules.map((module) => (
             <PopulatedModule 
             key={module._id} 
             module={module} 
@@ -290,7 +294,7 @@ const PopulatedCategory = ({user}) => {
             handleAddCard={handleAddCard} 
             handleDeleteCard={handleDeleteCard}
             handleViewCardModal={handleViewCardModal}
-            
+            isUserOwner={isUserOwner}
             />
         ))}
 
@@ -301,7 +305,7 @@ const PopulatedCategory = ({user}) => {
          {showAddCardModal && (
                         <AddCardModal
                         className="modal"
-                          categoryId={categoryId}
+                          deckId={deckId}
                           moduleId={selectedModuleId}
                           user={user}
                           onClose={handleCloseModal}
@@ -312,8 +316,8 @@ const PopulatedCategory = ({user}) => {
         <ViewCardModal
         className="modal"
         card={viewCardModal}
-        categoryName={category.name}
-        moduleName={category.modules.find((module) =>
+        deckName={deck.name}
+        moduleName={deck.modules.find((module) =>
             module.cards.some((card) => card._id === viewCardModal._id)
         ).name}
         handleNextCard={handleViewNextCard}
@@ -321,6 +325,7 @@ const PopulatedCategory = ({user}) => {
         handleCloseModal={() => setViewCardModal(null)}
         handleUpdateCard={handleUpdateCard}
         handleDeleteCard={handleDeleteCard}
+        isUserOwner={isUserOwner}
         />
 )}
 
@@ -328,4 +333,4 @@ const PopulatedCategory = ({user}) => {
     )
 }
 
-export default PopulatedCategory;
+export default PopulatedDeck;

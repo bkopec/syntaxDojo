@@ -43,6 +43,7 @@ body {
 
 .viewCard {
   padding-bottom:42px;
+  white-space:pre-wrap;
 }
 
 .next-button, .previous-button {
@@ -74,6 +75,7 @@ strong {
 
 .deleteCardButton {
   color:red;
+  font-size:24px;
 }
 
 .required:after {
@@ -85,7 +87,7 @@ strong {
 .cardInput {
   min-width:24px;
   outline: grey 1px solid;
-  margin: 0 8px;
+  margin: 0 4px;
   padding : 3px;
   line-height: normal;
 }
@@ -124,13 +126,19 @@ strong {
   gap:10px;
 }
 
-.addCard.modal label, .field > p {
+.addCard.modal label {
   display:flex;
   margin-bottom: 8px;
   white-space: nowrap;
 }
 
-.categoryActions {
+.field > p {
+  display:flex;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+
+.deckActions {
   display:flex;
   gap:10px;
 }
@@ -139,10 +147,15 @@ strong {
   display:block;
 }
 
-.addCard div[contenteditable="true"], .viewCard div[contenteditable="true"] {
+.addCard div[contenteditable="true"], .viewCard div[contenteditable="true"], .viewCard li[contenteditable="true"] {
   border: 1px solid grey;
   display:inline-block;
   width:100%;
+  cursor:text;
+}
+
+.viewCard li[contenteditable="true"] {
+  margin-bottom:5px;
 }
 
 .editIcon {
@@ -178,11 +191,11 @@ a:hover {
   font-weight:bold;
 }
 
-.deleteCategoryButton {
+.deleteDeckButton {
   text-decoration:underline;
 }
 
-.deleteCategoryButton:hover {
+.deleteDeckButton:hover {
   font-weight:bold;
   cursor:pointer;
 }
@@ -195,6 +208,17 @@ a:hover {
 
 .deckList .deckItem li {
   display:inline-block;
+}
+
+.cardList {
+  display:flex;
+  gap:5px;
+  flex-direction:column;
+}
+
+.cardListItem {
+  padding:5px;
+  border:1px solid #3EB2FD;
 }
 
 .cardListItem p {
@@ -217,8 +241,8 @@ a:hover {
 }
 
 .viewCardIcon {
-  width:16px;
-  height:16px;
+  width:32px;
+  height:32px;
   margin-top:4px;
   cursor:pointer;
 }
@@ -288,3 +312,87 @@ button:focus:not(:active) {
 .author span {
   font-weight:bold;
 }
+
+.moduleActions {
+  display:inline-flex;
+  gap:5px;
+  align-items:center;
+}
+
+.moduleActions span {
+  cursor:pointer;
+}
+
+.populatedModule h2 {
+  display:inline-block;
+  margin-right:10px;
+}
+
+.deleteModuleButton {
+  margin-top:-3px;
+  font-size:24px;
+}
+
+.studyCard .label {
+  font-family:"Tahoma", sans-serif;
+}
+
+.reviewDateInfo {
+  font-size:0.8rem;
+  margin-bottom:0px;
+  font-family:"Tahoma", sans-serif;
+}
+
+.studyCard {
+  white-space:pre-wrap;
+}
+
+.emptyField {
+  color:grey;
+  font-size:0.8rem;
+  font-style:italic
+}
+
+.choice.wrongAnswer {
+  color: red;
+}
+
+.choice.correctAnswer {
+  color: green;
+}
+
+
+
+.gradientBorder {
+  --borderWidth: 3px;
+  position: relative;
+  border-radius: var(--borderWidth);
+}
+.gradientBorder:after {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--borderWidth));
+  left: calc(-1 * var(--borderWidth));
+  height: calc(100% + var(--borderWidth) * 2);
+  width: calc(100% + var(--borderWidth) * 2);
+  background: linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82);
+  border-radius: calc(2 * var(--borderWidth));
+  z-index: -1;
+  animation: animatedgradient 3s ease alternate infinite;
+  background-size: 300% 300%;
+}
+
+
+@keyframes animatedgradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+

@@ -28,21 +28,21 @@ const Card = mongoose.model('Card', cardSchema);
 const moduleSchema = new mongoose.Schema({
     name: { type: String, required: true },
     cards: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Card' }],
-    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null},
+    deck: { type: mongoose.Schema.Types.ObjectId, ref: 'Deck', default: null},
     cardCount: { type: Number, default: 0},
   });
   
   const Module = mongoose.model('Module', moduleSchema);
 
   
-  const categorySchema = new mongoose.Schema({
+  const deckSchema = new mongoose.Schema({
     name: { type: String, required: true },
     modules: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Module' }],
     user: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
   });
   
-  const Category = mongoose.model('Category', categorySchema);
+  const Deck = mongoose.model('Deck', deckSchema);
   
-  module.exports = { Card, Module, Category };
+  module.exports = { Card, Module, Deck };
 
 

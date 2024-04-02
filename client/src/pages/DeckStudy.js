@@ -1,10 +1,10 @@
 import Study from '../components/Study';
 
-const CategoryStudy = ({user}) => {
+const DeckStudy = ({user}) => {
 
   return (
     <Study user={user} />
   );
 };
 
-export default CategoryStudy;
+export default DeckStudy;

@@ -9,8 +9,8 @@ const backendUrl = config.backendUrl;
 
 
 const Study = ({user}) => {
-    const {categoryId} = useParams();
-    const [category, setCategory] = useState(null);
+    const {deckId} = useParams();
+    const [deck, setDeck] = useState(null);
     const [cardDeck, setCardDeck] = useState({index : -1, cards : []});
     const [loaded, setLoaded] = useState(false);
 
@@ -28,29 +28,29 @@ const Study = ({user}) => {
 
 
     useEffect(() => {
-        const fetchCategory = async () => {
+        const fetchDeck = async () => {
           try {
-            const response = await axios.get(backendUrl + `/api/cards/category/${categoryId}/populated/study`, {
+            const response = await axios.get(backendUrl + `/api/cards/deck/${deckId}/populated/study`, {
               headers: {
                 Authorization: `Bearer ${user.token}`,
               },
             });
-            setCategory(response.data);
+            setDeck(response.data);
             setCardDeck({index : 0, cards : extractCards(response.data.modules)});
             setLoaded(true);
           } catch (error) {
-            console.error('Error fetching category:', error);
+            console.error('Error fetching deck:', error);
           }
         };
     
-        fetchCategory();
-      }, [categoryId, user.token]); // Include categoryId and user.token as dependencies
+        fetchDeck();
+      }, [deckId, user.token]);
 
 
       const sendReview = async (card) => {
         try {
           const response = await axios.post(
-            backendUrl + `/api/cards/category/${category._id}/module/${card.moduleId}/card/${card._id}/review`,
+            backendUrl + `/api/cards/deck/${deck._id}/module/${card.moduleId}/card/${card._id}/review`,
             {
                 nextReviewInterval: card.nextReviewInterval,
                 nextReviewDate: card.nextReviewDate,
@@ -69,7 +69,7 @@ const Study = ({user}) => {
       }
 
       const onReviewSuccess = (card) => {
-        if (card.nextReviewInterval == 0)
+        if (card.nextReviewInterval == 0 ||card.nextReviewInterval == -1) // -1 means the card was never reviewed
             card.nextReviewInterval = 1;
         else {
             let nextReviewDate = new Date()
@@ -107,11 +107,13 @@ const Study = ({user}) => {
         {cardDeck.cards.length != 0 &&
         <StudyCard card={cardDeck.cards[cardDeck.index]} nextCard={nextCard} onReviewSuccess={onReviewSuccess} onReviewFailure={onReviewFailure} />
         }
+
         {!loaded &&
-        <h1>Loading...</h1>}
+        <p>Loading...</p>}
+
         {loaded && cardDeck.cards.length == 0 &&
         <>
-        <h1>No cards left to study</h1>
+        <p>No cards left to study</p>
         <a href="#" onClick={() => navigate("/")}>Go back</a>
         
         </>}

@@ -5,21 +5,10 @@ import Cookies from 'universal-cookie';
 
 import {
   BrowserRouter as Router,
-  Routes, Route, Link,
-  useMatch, useParams,
-  createSearchParams, useNavigate, useLocation
 } from 'react-router-dom'
 
 import HomePage from './pages/Home';
 import DojoPage from './pages/Dojo';
-
-//axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
-//axios.defaults.headers.get['Access-Control-Allow-Origin'] = '*';
-
-//axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*';
-
-
-const backendUrl = "http://localhost:3001";
 
 
 

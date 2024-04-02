@@ -1,16 +1,19 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-const ViewCardModal = ({ card, moduleName, categoryName, handleCloseModal, handleNextCard, handlePreviousCard, handleUpdateCard, handleDeleteCard }) => {
+const ViewCardModal = ({ card, moduleName, deckName, handleCloseModal, handleNextCard, handlePreviousCard, handleUpdateCard, handleDeleteCard, isUserOwner }) => {
     const [editingMode, setEditingMode] = useState(false);
     const  [updatedCard, setUpdatedCard] = useState({ ...card, updated:false});
-    const fieldsToSkip = ['_id', 'next', 'moduleId', '__v', 'updated'];
-  
+    const fieldsToSkip = ['_id', 'next', 'moduleId', '__v', 'updated', 'reviews', 'nextReviewDate', 'nextReviewInterval'];
+
+    useEffect(() => {
+      setUpdatedCard({ ...card, updated: false });
+    }, [card]);
+
     const handleClickOverlay = (e) => {
       if (e.target.classList.contains('overlay')) {
         handleCloseModal();
       }
     };
-  
 
     const toggleEditingMode = () => {
       if (editingMode) {
@@ -31,17 +34,18 @@ const ViewCardModal = ({ card, moduleName, categoryName, handleCloseModal, handl
       <div onClick={handleClickOverlay} className="overlay">
         
         <div className="modal viewCard">
-            <div className="actions">
+            {isUserOwner && <div className="actions">
                 {!editingMode && <img className="editIcon" src="/images/edit.png" alt="Edit" onClick={toggleEditingMode} title="Edit Card" />}
                 {editingMode && <img className="editIcon" src="/images/green-check.png" alt="Edit" onClick={toggleEditingMode} title="Save Card" />}
                 <span className="deleteCardButton" style={{ color: 'red' }} onClick={() => handleDeleteCard(card._id, card.moduleId)} title="Delete Card">❌</span>
-            </div>
+            </div>}
           <h1>Card Details</h1>
-          <p className="cardPath">{categoryName} &gt; {moduleName}</p>
+          <p className="cardPath">{deckName} &gt; {moduleName}</p>
           {Object.keys(card).map(key => (
             fieldsToSkip.includes(key) ? null : (
               <div key={key}>
                 {key !== 'type' && !editingMode ? (
+                  /**** Viewing mode ****/
                   <p>
                     <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:&nbsp;</strong>
                     {Array.isArray(card[key]) ? (
@@ -50,11 +54,12 @@ const ViewCardModal = ({ card, moduleName, categoryName, handleCloseModal, handl
                           <li key={index}>{item}</li>
                         ))}
                       </ul>
-                    ) : (
-                      card[key].toString()
+                    ) : ( 
+                      card[key].toString() == '' ? <span className="emptyField">Empty</span> : card[key].toString()
                     )}
                   </p>
-                ) : (
+                ) : ( 
+                  /**** Editing mode ****/
                   <div className="field">
                     <p>
                     <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:&nbsp;</strong>

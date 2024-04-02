@@ -5,8 +5,8 @@ import {
   } from 'react-router-dom'
   
 import Overview from './Overview';
-import CategoryView from './CategoryView';
-import CategoryStudy from './CategoryStudy';
+import DeckView from './DeckView';
+import DeckStudy from './DeckStudy';
 
 const DojoPage = ({user, setUser}) => {
     return (
@@ -15,22 +15,22 @@ const DojoPage = ({user, setUser}) => {
     <Route path="/" element={ 
         <Overview user={user} />  
     }/>
-    <Route path="/category/:categoryId" element={ 
+    <Route path="/deck/:deckId" element={ 
       <>
-        <CategoryView user={user} />
+        <DeckView user={user} />
       </>
     }/>
-    <Route path="/category/:categoryId/study" element={ 
+    <Route path="/deck/:deckId/study" element={ 
       <>
-        <CategoryStudy user={user} />
+        <DeckStudy user={user} />
       </>
     }/>
-    <Route path="/category/:categoryId/:moduleId" element={ 
+    <Route path="/deck/:deckId/:moduleId" element={ 
       <>
 
       </>
     }/>
-    <Route path="/category/:categoryId/:moduleId/add" element={ 
+    <Route path="/deck/:deckId/:moduleId/add" element={ 
       <>
              
       </>

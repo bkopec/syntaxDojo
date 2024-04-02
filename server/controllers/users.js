@@ -1,10 +1,7 @@
 const usersRouter = require('express').Router()
-const User = require('../models/user')
 
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-
-const config = require('../utils/config')
 
 let Database;
 Database = require('../database/database');
@@ -27,7 +24,7 @@ usersRouter.post('/login', async (request, response) => {
   
       if (!passwordCorrect) {
         return response.status(401).json({
-          errorMessage: 'Invalid password.', error:"INVALID_PASSWORD"
+          errorMessage: 'Invalid credentials.', error:"INVALID_CREDENTIALS"
         })
       }
       else {
@@ -37,7 +34,7 @@ usersRouter.post('/login', async (request, response) => {
     }
     else  {
       return response.status(401).json({
-        errorMessage: 'Username doesn\'t exist.', error:"INVALID_USER"
+        errorMessage: 'Invalid credentials.', error:"INVALID_CREDENTIALS"
       })
     }
   })
@@ -46,7 +43,7 @@ usersRouter.post('/login', async (request, response) => {
   usersRouter.post('/register', async (request, response) => {
   
     if (request.body.password.length < 4)
-      return(response.status(500).json({ error: 'Internal Server Error', detailedError: "Forged request or old client" }));
+      return(response.status(500).json({ error: 'Internal Server Error', detailedError: "Password is too short" }));
   
     const user = await Database.findUserByLogin(request.body.username);
 

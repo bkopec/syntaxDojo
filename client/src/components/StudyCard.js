@@ -4,26 +4,31 @@ import { useNavigate } from "react-router-dom";
 const StudyCard = ({ card, nextCard, onReviewSuccess, onReviewFailure }) => {
     const [showAnswer, setShowAnswer] = useState(false);
     const [selectedChoice, setSelectedChoice] = useState(-1);
+    const [cardReviewed, setCardReviewed] = useState(false);
     const choices = useRef(null);
     const inputRef = useRef(null);
 
     const navigate = useNavigate();
 
     useEffect(() => {
+        const reviewed = cardReviewed;
+        setCardReviewed(false);
         setShowAnswer(false);
-        console.log("reseting card")
-        //choices.current = null;
-        //setSelectedChoice(-1);
         if (inputRef.current) {
             inputRef.current.innerHTML = "&#8203;";
             inputRef.current.focus();
         }
-    }, [card]); 
+        if (reviewed) {
+            choices.current = null;
+            setSelectedChoice(-1);
+            nextCard();
+        }
+        }, [card, cardReviewed]);
 
     console.log("selected :" + selectedChoice)
     const getCardHeader = useMemo(() => {
         if (card.type === 'standard') {
-            return <h1>{card.front}</h1>;
+            return <p>{card.front}</p>;
         }
 
         if (card.type === 'multipleChoice') {
@@ -31,10 +36,9 @@ const StudyCard = ({ card, nextCard, onReviewSuccess, onReviewFailure }) => {
                 choices.current = [...card.choices, card.correctAnswer];
                 choices.current.sort(() => Math.random() - 0.5);
             }
-            console.log(selectedChoice);
             return (
                 <>
-                    <h1>{card.question}</h1>
+                    <p>{card.question}</p>
                     <ul className="multipleChoice">
                         {choices.current.map((choice, index) => (
                             <>
@@ -45,7 +49,11 @@ const StudyCard = ({ card, nextCard, onReviewSuccess, onReviewFailure }) => {
                             </div>
                             }
                             {showAnswer &&
-                            <div className="choice">
+                            <div className={"choice" + 
+                            (choices.current[index] === card.correctAnswer ? 
+                            " correctAnswer" 
+                            : 
+                            (selectedChoice == index ? " wrongAnswer" : ""))}>
                             <input type="radio" checked={selectedChoice == index ? 'true' : ''} disabled={true} />
                             <label>{choice}</label>
                             </div>
@@ -59,7 +67,7 @@ const StudyCard = ({ card, nextCard, onReviewSuccess, onReviewFailure }) => {
         if (card.type === 'lineInput') {
             return (
                 <>
-                    <h1>{card.instructions}</h1>
+                    <p>{card.instructions}</p>
                     {card.beforeInput && <p className={"beforeInput" + (card.newlinesAroundInput ? "" : " inline")}>{card.beforeInput}</p>}
                     <div ref={inputRef} className={"cardInput" + (card.newlinesAroundInput ? "" : " inline")} contentEditable={showAnswer ? "false" : "true"}>&#8203;</div>
                     {card.afterInput && <p className={"afterInput" +  (card.newlinesAroundInput ? "" : " inline")}>{card.afterInput}</p>}
@@ -70,14 +78,14 @@ const StudyCard = ({ card, nextCard, onReviewSuccess, onReviewFailure }) => {
 
     const getCardAnswer = useMemo(() => {
         if (card.type === 'standard') {
-            return <p>{card.back}</p>;
+            return card.back;
         }
 
         if (card.type === 'multipleChoice') {
-            return <p>{card.correctAnswer}</p>;
+            return card.correctAnswer;
         }
         if (card.type === 'lineInput') {
-            return <p>{card.answer}</p>;
+            return card.answer;
         }
     }, [card]);
 
@@ -92,16 +100,15 @@ const StudyCard = ({ card, nextCard, onReviewSuccess, onReviewFailure }) => {
             {!showAnswer && <button className="showAnswer" onClick={() => setShowAnswer(true)}>Show Answer</button>}
             {showAnswer && (
                 <>
-                    <button className="goodAnswer" onClick={() => { onReviewSuccess(card); nextCard(); }}>I knew it</button>
-                    <button className="badAnswer" onClick={() => { onReviewFailure(card); nextCard(); }}>I didn't know it</button>
+                    <button className="goodAnswer" onClick={() => { onReviewSuccess(card); setCardReviewed(true); }}>I knew it</button>
+                    <button className="badAnswer" onClick={() => { onReviewFailure(card); setCardReviewed(true); }}>I didn't know it</button>
                 </>
             )}
             </div>
             {showAnswer && (
-                <>
-                    <p>Answer:</p>
+                <p><strong>Answer :&nbsp;</strong>
                     {getCardAnswer}
-                </>
+                </p>
             )}
         </div>
     );
