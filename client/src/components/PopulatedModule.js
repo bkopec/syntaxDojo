@@ -7,15 +7,20 @@ import config from '../config.js';
 
 
 const PopulatedModule = ({module, handleDeleteModule, handleAddCard, handleDeleteCard, handleViewCardModal, isUserOwner}) => {
+
+  const [unrolled, setUnrolled] = React.useState(true);
+
   return (
     <div  className="populatedModule">
     <h2>Module: {module.name}</h2>
     {isUserOwner && 
     <div className="moduleActions">
-    <span style={{ color: 'green', fontSize: "36px", fontWeight: 'bold' }} onClick={() => handleAddCard(module._id, module.name)} title="Add Card">＋</span>
-    <span className="deleteModuleButton" style={{ color: 'red' }} onClick={() => handleDeleteModule(module._id, module.name)} title="Delete Module">❌</span>
+      <span style={{ backgroundImage: "url('/images/" + (!unrolled ? "un" : "") + "roll.png')" }}  className="rollUnroll" onClick={() => setUnrolled(!unrolled)} title={(unrolled ? "Roll" : "Unroll") + " cards"}></span>
+      <span style={{ color: 'green', fontSize: "36px", fontWeight: 'bold' }} onClick={() => handleAddCard(module._id, module.name)} title="Add Card">＋</span>
+      <span className="deleteModuleButton" style={{ color: 'red' }} onClick={() => handleDeleteModule(module._id, module.name)} title="Delete Module">❌</span>
     </div>
     }
+    {unrolled && <>
     <h3>Cards:</h3>
     <div className="cardList">
       {module.cards.length === 0 && <p>No cards found</p>}
@@ -28,7 +33,9 @@ const PopulatedModule = ({module, handleDeleteModule, handleAddCard, handleDelet
           </div>
         </div>
       ))}
+
     </div>
+    </>}
   </div>
   );
 }

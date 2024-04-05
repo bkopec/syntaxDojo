@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+import { useNavigate } from 'react-router-dom';
+import Cookies from 'universal-cookie';
+
 import config from '../config.js';
 const backendUrl = config.backendUrl;
 
 
-const Overview = ({user}) => {
+const Overview = ({user, setUser}) => {
   const [decks, setDecks] = useState([]);
   const [publicDecks, setPublicDecks] = useState([]);
   const [newDeckName, setNewDeckName] = useState('');
   const [deckRenaming, setDeckRenaming] = useState({name:'', _id:''});
   const [loaded, setLoaded] = useState([false, false]); // [decks, publicDecks]
 
+  const navigate = useNavigate();
 
   const handleDeckRenaming = async () => {
     if (deckRenaming.name === '' || (deckRenaming.name === decks.find(deck => deck._id === deckRenaming.id).name)) {
@@ -35,6 +39,7 @@ const Overview = ({user}) => {
   };
 
 
+  // Allow user to press Enter to confirm deck renaming
   useEffect(() => {
     const handleEnterKey = (e) => {
       if (e.key === 'Enter') {
@@ -127,7 +132,6 @@ const Overview = ({user}) => {
         }
         );
         if (response.status === 200) {
-            console.log('Deck deleted');
             setDecks(decks.filter((deck) => deck._id !== deckId));
             }
         else {
@@ -156,7 +160,6 @@ const Overview = ({user}) => {
             }
             );
             if (response.status === 200) {
-                console.log('Deck reset');
                 setDecks(decks.map((deck) => deck._id === deckId ? {...deck, cards : []} : deck));
                 }
             else {
@@ -169,8 +172,20 @@ const Overview = ({user}) => {
         }
 
 
+        const handleLogout  = () => {
+          const cookies = new Cookies();
+
+          cookies.remove('login');
+          cookies.remove('jwt-token');
+          setUser({});
+          navigate("/")
+        }
+
   return (
     <div>
+       <nav className="deckActions">
+          <a href="#" onClick={handleLogout}>Log out</a>
+        </nav>
       <h1>Overview</h1>
 
       <form className="buttonForm">

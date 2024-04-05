@@ -5,7 +5,7 @@ import config from '../config.js'
 
 const backendUrl = config.backendUrl;
 
-const AddCardModal = ({ deckId, moduleId, user, onClose, onCardAdded }) => {
+const AddCardModal = ({ deckId, moduleId, user, onClose, onCardAdded}) => {
   const cardName = useRef(null);
   const [cardType, setCardType] = useState('standard');
 
@@ -42,7 +42,7 @@ const AddCardModal = ({ deckId, moduleId, user, onClose, onCardAdded }) => {
     if (cardFront.current)
       cardFront.current.textContent = '';
     if (cardBack.current)
-      cardBack.current.textContent = '';
+      cardBack.current.textContent ='';
     if (beforeInput.current)
       beforeInput.current.textContent = '';
     if (afterInput.current)

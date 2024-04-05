@@ -25,7 +25,6 @@ const StudyCard = ({ card, nextCard, onReviewSuccess, onReviewFailure }) => {
         }
         }, [card, cardReviewed]);
 
-    console.log("selected :" + selectedChoice)
     const getCardHeader = useMemo(() => {
         if (card.type === 'standard') {
             return <p>{card.front}</p>;

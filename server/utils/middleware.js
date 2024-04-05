@@ -6,7 +6,6 @@ const Database = require('../database/database'); // Replace with your actual da
 const validateModule = async (request, response, next) => {
   try {
     const moduleId = request.params.moduleId;
-    const deck = request.deck; // Assuming deck is already attached to the request
 
     const module = await Database.findModuleById(moduleId);
 
@@ -102,7 +101,6 @@ const unknownEndpoint = (request, response) => {
 }
 
 const errorHandler = (error, request, response, next) => {
-  //logger.error(error.message)
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
   } else if (error.name === 'ValidationError') {
@@ -112,7 +110,6 @@ const errorHandler = (error, request, response, next) => {
   }
   else
      return (response.status(500).json({ error: 'Internal Server Error', detailedError: error.message }));
-  next(error)
 }
 
 module.exports = {

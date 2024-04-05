@@ -14,9 +14,10 @@ function generateToken(userForToken) {
 
 usersRouter.post('/login', async (request, response) => {
   
-    if (request.body.password.length < 4)
+    if (!request.body.password || !request.body.username)
       return(response.status(500).json({ error: 'Internal Server Error', detailedError: "Forged request or old client" }));
   
+    try {
     const user = await Database.findUserByLogin(request.body.username);
 
     if (user) {
@@ -37,14 +38,21 @@ usersRouter.post('/login', async (request, response) => {
         errorMessage: 'Invalid credentials.', error:"INVALID_CREDENTIALS"
       })
     }
-  })
+  }
+  catch (error) {
+    console.error('Error logging in:', error);
+
+    response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
+  });
 
 
   usersRouter.post('/register', async (request, response) => {
   
-    if (request.body.password.length < 4)
+    if (!request.body.password || !request.body.username)
       return(response.status(500).json({ error: 'Internal Server Error', detailedError: "Password is too short" }));
   
+    try {
     const user = await Database.findUserByLogin(request.body.username);
 
     if (user) {
@@ -70,7 +78,12 @@ usersRouter.post('/login', async (request, response) => {
   
       response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
     });
+  }
+  catch(error) {
+    console.error('Error registering:', error);
 
-  })
+    response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
+})
   
 module.exports = usersRouter

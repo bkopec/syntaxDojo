@@ -11,7 +11,6 @@ import HomePage from './pages/Home';
 import DojoPage from './pages/Dojo';
 
 
-
 function App() {
   const [user, setUser] = useState({});
   const cookies = new Cookies();

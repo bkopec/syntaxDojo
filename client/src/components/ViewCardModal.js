@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-const ViewCardModal = ({ card, moduleName, deckName, handleCloseModal, handleNextCard, handlePreviousCard, handleUpdateCard, handleDeleteCard, isUserOwner }) => {
+const ViewCardModal = ({ card, moduleName, deckName, moduleId, handleCloseModal, handleNextCard, handlePreviousCard, handleUpdateCard, handleDeleteCard, isUserOwner, modules, handleMoveCard}) => {
     const [editingMode, setEditingMode] = useState(false);
     const  [updatedCard, setUpdatedCard] = useState({ ...card, updated:false});
     const fieldsToSkip = ['_id', 'next', 'moduleId', '__v', 'updated', 'reviews', 'nextReviewDate', 'nextReviewInterval'];
@@ -38,6 +38,14 @@ const ViewCardModal = ({ card, moduleName, deckName, handleCloseModal, handleNex
                 {!editingMode && <img className="editIcon" src="/images/edit.png" alt="Edit" onClick={toggleEditingMode} title="Edit Card" />}
                 {editingMode && <img className="editIcon" src="/images/green-check.png" alt="Edit" onClick={toggleEditingMode} title="Save Card" />}
                 <span className="deleteCardButton" style={{ color: 'red' }} onClick={() => handleDeleteCard(card._id, card.moduleId)} title="Delete Card">❌</span>
+                {modules.length > 1 && <label>Change module:&nbsp; 
+                  <select onChange={(e) => handleMoveCard(card, e.target.value)} value={""}>
+                  <option value="" disabled>Select module</option>
+                    {modules.map((module) => (
+                      module._id != card.moduleId && <option key={module._id} value={module._id}>{module.name}</option>
+                    ))}
+                  </select>
+                </label>}
             </div>}
           <h1>Card Details</h1>
           <p className="cardPath">{deckName} &gt; {moduleName}</p>
@@ -58,8 +66,8 @@ const ViewCardModal = ({ card, moduleName, deckName, handleCloseModal, handleNex
                       card[key].toString() == '' ? <span className="emptyField">Empty</span> : card[key].toString()
                     )}
                   </p>
-                ) : ( 
-                  /**** Editing mode ****/
+              ) : ( 
+                /**** Editing mode ****/
                   <div className="field">
                     <p>
                     <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:&nbsp;</strong>

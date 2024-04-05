@@ -13,7 +13,7 @@ const DojoPage = ({user, setUser}) => {
 
     <Routes>
     <Route path="/" element={ 
-        <Overview user={user} />  
+        <Overview user={user} setUser={setUser} />  
     }/>
     <Route path="/deck/:deckId" element={ 
       <>

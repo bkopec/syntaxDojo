@@ -25,11 +25,11 @@ class Database {
   }
 
 
-  static async findCategoriesByUserId(userId) {
+  static async findDecksByUserId(userId) {
     return Deck.find({user: userId});
   }
 
-  static async findPublicCategoriesByUserId(userId) {
+  static async findPublicDecksByUserId(userId) {
     return Deck.find({user: { $ne: userId }})
     .populate({
       path: 'user',
@@ -42,6 +42,26 @@ class Database {
   }
 
   
+  static async moveCard(cardId, moduleId, targetModuleId) {
+    const module = await Module.findById(moduleId);
+    const targetModule = await Module.findById(targetModuleId);
+    const card = await Card.findById(cardId);
+
+    module.cards = module.cards.filter(c => c.toString() !== cardId.toString());
+    module.cardCount -= 1;
+    targetModule.cards.push(card._id);
+    targetModule.cardCount += 1;
+    card.moduleId = targetModule._id;
+
+    try {
+        await module.save();
+        await targetModule.save();
+        await card.save();
+    }
+    catch (error) {
+        throw error;
+    }
+  }
 
   static async renameDeck(deck, name) 
   {
@@ -87,7 +107,6 @@ static async resetScheduleDeck(deck, userId) {
 
   static async deleteDeck(deck) {
     for (const deckModule of deck.modules) {
-      // get the module and delete all the cards in its cards array
       const module = await Module.findById(deckModule);
       const cardIds = module.cards.map(card => card.toString());
       await Card.deleteMany({ _id: { $in: cardIds } });

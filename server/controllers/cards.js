@@ -12,9 +12,7 @@ cardsRouter.post('/deck/:deckId/module/:moduleId/card/:cardId/review', authentic
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
-
-  const deck = request.deck;
-
+  
   try {
     const card = await Database.reviewCard(cardId, user._id, request.body.nextReviewInterval, request.body.nextReviewDate);
     return response.status(200).send(card);
@@ -24,6 +22,25 @@ cardsRouter.post('/deck/:deckId/module/:moduleId/card/:cardId/review', authentic
   }
 });
 
+cardsRouter.put('/deck/:deckId/module/:moduleId/card/:cardId/move', authenticateUser, checkDeckOwnership, validateModule, async (request, response) => {
+  const cardId = request.params.cardId;
+  const moduleId = request.params.moduleId;
+
+  const user = request.user;
+  if (!user) {
+    return response.status(401).json({ error: 'token invalid or user deleted' });
+  }
+
+  try {
+  await Database.moveCard(cardId, moduleId, request.body.newModuleId);
+  return response.status(200).send({id : cardId});
+  }
+  catch (error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
+});
+
+
 cardsRouter.put('/deck/:deckId/module/:moduleId/card/:cardId', authenticateUser, checkDeckOwnership, validateModule, async (request, response) => {
   const cardId = request.params.cardId;
 
@@ -31,9 +48,6 @@ cardsRouter.put('/deck/:deckId/module/:moduleId/card/:cardId', authenticateUser,
   if (!user) {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
-
-  const deck = request.deck;
-  const module = request.module;
 
   try {
   await Database.updateCard(cardId, request.body);
@@ -52,7 +66,6 @@ cardsRouter.delete('/deck/:deckId/module/:moduleId/card/:cardId', authenticateUs
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-  const deck = request.deck;
   const module = request.module;
 
   try {
@@ -71,13 +84,15 @@ cardsRouter.post('/deck/:deckId/module/:moduleId/addCard', authenticateUser, che
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
 
-
-  const deck = request.deck;
   const module = request.module;
 
+  try {
   const cardId = await Database.createCard(request.body, module);
-
   return response.status(200).send({id : cardId});
+  }
+  catch(error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
 });
 
 
@@ -108,9 +123,13 @@ cardsRouter.put('/deck/:deckId/reset', authenticateUser, getDeck, async (request
 
   const deck = request.deck;
 
+  try {
   await Database.resetScheduleDeck(deck, user._id);
-
   response.send({});
+  }
+  catch(error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
 });
 
 cardsRouter.post('/deck/:deckId/module', authenticateUser, checkDeckOwnership, async (request, response) => {
@@ -140,8 +159,13 @@ cardsRouter.get('/deck/:deckId/populated/:study?', authenticateUser, getDeck, as
 
   const deck = request.deck;
 
+  try {
   const populatedDeck = await Database.getDeckPopulatedById(deck._id, study !== undefined ? true : false, user._id.toString());
   response.send(populatedDeck);
+  }
+  catch (error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
 });
 
   cardsRouter.put('/deck/:deckId/rename', authenticateUser, checkDeckOwnership, async (request, response) => {
@@ -151,9 +175,14 @@ cardsRouter.get('/deck/:deckId/populated/:study?', authenticateUser, getDeck, as
     }
   
     const deck = request.deck;
-  
+    
+    try {
     await Database.renameDeck(deck, request.body.name);
     response.status(200).send({});
+    }
+    catch(error) {
+      return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+    }
   })
 
 cardsRouter.delete('/deck/:deckId', authenticateUser, checkDeckOwnership, async (request, response) => {
@@ -164,8 +193,13 @@ cardsRouter.delete('/deck/:deckId', authenticateUser, checkDeckOwnership, async 
 
   const deck = request.deck;
 
+  try {
   await Database.deleteDeck(deck);
   response.status(200).send({});
+  }
+  catch(error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
 })
 
 cardsRouter.get('/deck/public', authenticateUser, async (request, response) => {
@@ -174,8 +208,13 @@ cardsRouter.get('/deck/public', authenticateUser, async (request, response) => {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
    
-  const categories = await Database.findPublicCategoriesByUserId(user._id);
-  response.send(categories);
+  try {
+  const decks = await Database.findPublicDecksByUserId(user._id);
+  response.send(decks);
+  }
+  catch(error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
 })
 
 cardsRouter.get('/deck', authenticateUser, async (request, response) => {
@@ -184,8 +223,13 @@ cardsRouter.get('/deck', authenticateUser, async (request, response) => {
     return response.status(401).json({ error: 'token invalid or user deleted' });
   }
    
-  const categories = await Database.findCategoriesByUserId(user._id);
-  response.send(categories);
+  try {
+  const decks = await Database.findDecksByUserId(user._id);
+  response.send(decks);
+  }
+  catch(error) {
+    return response.status(500).json({ error: 'Internal Server Error', detailedError: error.message });
+  }
 })
 
 cardsRouter.post('/deck', authenticateUser, async (request, response) => {

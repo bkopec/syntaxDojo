@@ -265,6 +265,44 @@ const PopulatedDeck = ({user}) => {
         }
       };
 
+      const handleMoveCard = async (card, newModuleId) => {
+        try {
+          const response = await axios.put(
+            backendUrl + `/api/cards/deck/${deckId}/module/${card.moduleId}/card/${card._id}/move`,
+            { newModuleId },
+            {
+              headers: {
+                Authorization: `Bearer ${user.token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          if (response.status === 200) {
+            const oldModuleId = card.moduleId;
+            card.moduleId = newModuleId;
+            setDeck((prevDeck) => ({
+              ...prevDeck,
+              modules: prevDeck.modules.map((module) =>
+                module._id === oldModuleId
+                  ? {
+                      ...module,
+                      cards: module.cards.filter((c) => c._id !== card._id),
+                    }
+                  : 
+                  (module._id === newModuleId ? {
+                    ...module,
+                    cards: [...module.cards, card],
+                  }
+                : module)
+              ),
+            }));
+          } else {
+            console.error('Failed to move card:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Error moving card:', error);
+        }
+      }
 
     return (
         <>
@@ -326,6 +364,8 @@ const PopulatedDeck = ({user}) => {
         handleUpdateCard={handleUpdateCard}
         handleDeleteCard={handleDeleteCard}
         isUserOwner={isUserOwner}
+        modules={deck.modules}
+        handleMoveCard={handleMoveCard}
         />
 )}
 
