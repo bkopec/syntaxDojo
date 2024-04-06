@@ -24,6 +24,12 @@ app.use('/api/users', usersRouter)
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 
+app.get('/', (req, res) => {
+  // Set the response HTTP status code and send "Hello, World!" as the response
+  res.status(200).send('Hello, World!\n');
+});
+
+
 const PORT = config.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
