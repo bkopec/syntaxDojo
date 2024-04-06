@@ -180,7 +180,8 @@ const Overview = ({user, setUser}) => {
           setUser({});
           navigate("/")
         }
-
+        console.log(loaded[0]);
+        console.log(decks);
   return (
     <div>
        <nav className="deckActions">
@@ -205,7 +206,7 @@ const Overview = ({user, setUser}) => {
       <h2>Your Decks :</h2>
       <ul className="deckList">
         {loaded[0] && decks.length == 0 && 
-          <li>No decks found</li>}
+          <p>No personal decks found</p>}
         {decks.map((deck) => (
           <div key={deck._id} className="deckItem">
             {(deckRenaming.id === deck._id) &&
@@ -228,7 +229,7 @@ const Overview = ({user, setUser}) => {
       <h2>Public Decks :</h2>
       <ul className="deckList">
         {loaded[1] && publicDecks.length == 0 && 
-          <li>No decks found</li>}
+          <p>No public decks found</p>}
         {publicDecks.map((deck) => (
           <div key={deck._id} className="deckItem">
             {(deckRenaming.id === deck._id) &&
