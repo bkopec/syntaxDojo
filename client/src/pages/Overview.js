@@ -13,7 +13,8 @@ const Overview = ({user, setUser}) => {
   const [publicDecks, setPublicDecks] = useState([]);
   const [newDeckName, setNewDeckName] = useState('');
   const [deckRenaming, setDeckRenaming] = useState({name:'', _id:''});
-  const [loaded, setLoaded] = useState([false, false]); // [decks, publicDecks]
+  const [loadedDecks, setLoadedDecks] = useState(false);
+  const [loadedPublicDecks, setLoadedPublicDecks] = useState(false); 
 
   const navigate = useNavigate();
 
@@ -65,7 +66,7 @@ const Overview = ({user, setUser}) => {
           },
         });
         setDecks(response.data);
-        setLoaded([true, loaded[1]]);
+        setLoadedDecks(true);
       } catch (error) {
         console.error('Error fetching decks:', error);
       }
@@ -79,7 +80,7 @@ const Overview = ({user, setUser}) => {
           },
         });
         setPublicDecks(response.data);
-        setLoaded([loaded[0], true]);
+        setLoadedPublicDecks(true);
       } catch (error) {
         console.error('Error fetching decks:', error);
       }
@@ -180,8 +181,7 @@ const Overview = ({user, setUser}) => {
           setUser({});
           navigate("/")
         }
-        console.log(loaded[0]);
-        console.log(decks);
+
   return (
     <div>
        <nav className="deckActions">
@@ -205,7 +205,7 @@ const Overview = ({user, setUser}) => {
 
       <h2>Your Decks :</h2>
       <ul className="deckList">
-        {loaded[0] && decks.length == 0 && 
+        {loadedDecks && decks.length == 0 && 
           <p>No personal decks found</p>}
         {decks.map((deck) => (
           <div key={deck._id} className="deckItem">
@@ -228,7 +228,7 @@ const Overview = ({user, setUser}) => {
       </ul>
       <h2>Public Decks :</h2>
       <ul className="deckList">
-        {loaded[1] && publicDecks.length == 0 && 
+        {loadedPublicDecks && publicDecks.length == 0 && 
           <p>No public decks found</p>}
         {publicDecks.map((deck) => (
           <div key={deck._id} className="deckItem">

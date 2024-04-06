@@ -27,7 +27,7 @@ const AddCardModal = ({ deckId, moduleId, user, onClose, onCardAdded}) => {
     const [newlinesAroundInput, setNewlinesAroundInput] = useState(false);
 
     const convertHtml = (html) => {
-      return (html.replace(/<\/(div|h1|h2|h3|h4|h5|h6|p|li|ul|ol)>/gi, '\n').replace(/<[^>]+(?!br\s*\/?>)[^>]*>/g, '').replace(/<br\s*\/?>/gi, '\n'));
+      return (html.replace(/(?<!>)(<div>|<h1>|<h2>|<h3>|<h4>|<h5>|<h6>|<p>|<li>|<ul>|<ol>)/g, '\n').replace(/<\/(div|h1|h2|h3|h4|h5|h6|p|li|ul|ol)>/gi, '\n').replace(/<[^>]+(?!br\s*\/?>)[^>]*>/g, '').replace(/<br\s*\/?>/gi, '\n'));
     };
 
     const handlePaste = (event) => {
