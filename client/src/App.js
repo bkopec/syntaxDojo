@@ -1,6 +1,6 @@
 import './App.css';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Cookies from 'universal-cookie';
 
 import {
@@ -14,6 +14,10 @@ import DojoPage from './pages/Dojo';
 function App() {
   const [user, setUser] = useState({});
   const cookies = new Cookies();
+
+  useEffect(() => {
+    document.title = "Syntax Dojo"
+ }, []);
 
   if (!user.hasOwnProperty('token') && cookies.get('jwt-token') != undefined)
     setUser({token: cookies.get('jwt-token'), login: cookies.get('login')});
