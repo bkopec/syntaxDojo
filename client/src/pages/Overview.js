@@ -176,8 +176,8 @@ const Overview = ({user, setUser}) => {
         const handleLogout  = () => {
           const cookies = new Cookies();
 
-          cookies.remove('login');
-          cookies.remove('jwt-token');
+          cookies.remove('login', { path: '/' });
+          cookies.remove('jwt-token', { path: '/' });
           setUser({});
           navigate("/")
         }
