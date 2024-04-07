@@ -1,5 +1,5 @@
 const config = {
-    backendUrl: 'http://128.140.3.116:3002'
+    backendUrl: 'https://syntaxdojo.bkopec.com'
 };
 
 export default config;
